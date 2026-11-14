@@ -275,3 +275,40 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 
 .photos.n1 .pol img { aspect-ratio: auto; }
+
+/* bigger on laptops and desktops */
+@media (min-width: 900px) {
+  .lock-card { width: min(560px, 100%); }
+  .lock-bears { width: 340px; }
+  .lock-card h1 { font-size: 64px; }
+  .lock-sub { font-size: 21px; margin-bottom: 30px; }
+  #pass, #unlockBtn { font-size: 21px; padding: 18px 26px; }
+  .hint { font-size: 32px; margin-top: 22px; }
+  .err { font-size: 18px; }
+  .env { zoom: 1.6; }
+  .env-tap { font-size: 32px; }
+
+  .inner { max-width: 760px; }
+  .eyebrow { font-size: 16px; }
+  .slide h2, .intro h2 { font-size: 76px; }
+  .prose p { font-size: 22px; }
+  .verse { font-size: 31px; padding: 24px 30px 18px; }
+  .note, .big-tip { font-size: 28px; }
+  .scene { width: 420px; }
+  .photos.n1 .pol { width: 480px; }
+  .pol figcaption { font-size: 26px; }
+  .poem .st { font-size: 32px; }
+  .poem .st.last { font-size: 36px; }
+  .poem .sub { font-size: 20px; }
+  .poem .sign { font-size: 34px; }
+  .q-text { font-size: 24px; }
+  .q-zone { height: 220px; }
+  .yes, .no { font-size: 24px; padding: 18px 40px; }
+  .q-msg { font-size: 32px; }
+  .meme { width: 240px; }
+  .nav button { width: 58px; height: 58px; font-size: 32px; }
+  #count, .swipe-tip { font-size: 26px; }
+  #finale h2 { font-size: 76px; }
+  #finale .love { font-size: 46px; }
+  .btn { font-size: 20px; padding: 18px 28px; }
+}
