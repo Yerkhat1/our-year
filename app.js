@@ -96,6 +96,16 @@
   };
   const scene = (k, arg) => `<div class="scene"><svg viewBox="0 0 300 200" aria-hidden="true">${(SCENES[k] || SCENES.hug)(arg)}</svg></div>`;
 
+  /* ---------- scale to the screen ---------- */
+  function fit() {
+    const w = innerWidth, h = innerHeight;
+    const z = w >= 820 ? Math.max(1, Math.min(w / 600, h / 540, 1.75)) : 1;
+    document.documentElement.style.setProperty("--z", z.toFixed(3));
+    document.documentElement.style.setProperty("--zn", Math.max(1, z * 0.85).toFixed(3));
+  }
+  fit();
+  addEventListener("resize", fit);
+
   /* ---------- floating hearts + tap hearts ---------- */
   const sky = $("#sky");
   for (let i = 0; i < 16; i++) {
@@ -177,12 +187,15 @@
   let D, slidesEl = [], cur = 0;
   const ROT = [-3.5, 2.5, -1.5, 3, -2.5, 1.5];
 
+  let peekN = 0;
+  const peek = () => `<svg class="peek-bear" viewBox="-60 -56 120 84" aria-hidden="true">${bear({ x: 0, y: 0, c: peekN++ % 2 ? "white" : "brown", f: peekN % 3 ? "blush" : "happy" })}</svg>`;
   function photosHTML(list) {
     const items = list.map((p, i) => `<figure class="pol" style="--r:${ROT[i % ROT.length]}deg" data-k="${esc(p.k)}" data-c="${esc(p.c || "")}">
-      <img src="${D.images[p.k]}" alt="${esc(p.c || "")}" loading="lazy"><figcaption>${esc(p.c || "")}</figcaption></figure>`).join("");
+      <img src="${D.images[p.k]}" alt="${esc(p.c || "")}" loading="lazy"><figcaption>${esc(p.c || "")}</figcaption>${i === 0 ? peek(list.length) : ""}</figure>`).join("");
     return `<div class="photos n${list.length}">${items}</div>`;
   }
-  const versesHTML = (keys) => `<div class="verse">${keys.map((k) => `<p>${esc(D.stanzas[k])}</p>`).join("")}</div>`;
+  const verse = (t) => esc(t).replace(/~([^~]+)~/g, "<s>$1</s>");
+  const versesHTML = (keys) => `<div class="verse">${keys.map((k) => `<p>${verse(D.stanzas[k])}</p>`).join("")}</div>`;
   const prose = (arr) => `<div class="prose">${arr.map((t) => `<p>${esc(t)}</p>`).join("")}</div>`;
 
   function slideHTML(s) {
@@ -191,7 +204,8 @@
     }
     if (s.kind === "poem") {
       const keys = Object.keys(D.stanzas);
-      const st = keys.map((k, i) => `<p class="st${i === keys.length - 1 ? " last" : ""}">${esc(D.stanzas[k])}</p>`).join("");
+      const mark = (i) => (i === keys.length - 1 ? " last" : i % 5 === 2 ? " doodle" : i % 7 === 4 ? " star" : "");
+      const st = `<div class="paper">${keys.map((k, i) => `<p class="st${mark(i)}">${verse(D.stanzas[k])}</p>`).join("")}</div>`;
       return `<div class="inner poem"><div class="eyebrow" style="text-align:center">стих, который я обещал</div><h2>${esc(D.poemTitle)}</h2>
         <p class="sub">читай медленно. можно вслух.</p>${st}<p class="divider">♥ ♥ ♥</p><p class="sign">твой</p><p class="big-tip">и ещё кое-что →</p></div>`;
     }
@@ -273,8 +287,12 @@
   function setupPoem() {
     const poemSlide = slidesEl[D.slides.findIndex((s) => s.kind === "poem")];
     if (!poemSlide) return;
-    const io = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && e.target.classList.add("seen")), { root: poemSlide, threshold: 0.4 });
-    poemSlide.querySelectorAll(".st").forEach((el) => io.observe(el));
+    const sts = [...poemSlide.querySelectorAll(".st")];
+    const reveal = () => sts.forEach((el) => { if (el.getBoundingClientRect().top < innerHeight * 0.88) el.classList.add("seen"); });
+    poemSlide.addEventListener("scroll", reveal, { passive: true });
+    poemSlide.addEventListener("transitionend", reveal);
+    addEventListener("resize", reveal);
+    setInterval(() => { if (poemSlide.classList.contains("active")) reveal(); }, 400);
   }
 
   /* ---------- the only button is "no": it grows, cracks, breaks, and "yes" falls out ---------- */
