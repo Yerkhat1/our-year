@@ -22,7 +22,7 @@ body {
   overflow: hidden;
   overscroll-behavior: none;
 }
-button { font: inherit; color: inherit; cursor: pointer; }
+button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
 .hidden { display: none !important; }
 
 /* floating hearts */
@@ -206,13 +206,34 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .question { min-height: calc(100% - 20px); display: flex; flex-direction: column; justify-content: center; text-align: center; position: relative; }
 .question h2 { text-align: center; }
 .q-text { font-size: 18px; line-height: 1.6; }
-.q-zone { position: relative; height: 170px; margin-top: 18px; }
-.yes, .no {
-  position: absolute; top: 50%; padding: 14px 30px; border-radius: 999px; border: 0; font-size: 18px; font-weight: 500;
-  transition: transform .25s, left .35s cubic-bezier(.3,1.4,.5,1), top .35s cubic-bezier(.3,1.4,.5,1), opacity .3s;
+.q-zone { position: relative; height: 230px; margin-top: 10px; display: grid; place-items: center; touch-action: manipulation; }
+.no {
+  position: relative; padding: 16px 38px; border-radius: 999px; font-size: 20px; font-weight: 500;
+  background: var(--paper); color: var(--ink); border: 2px solid var(--pink); overflow: hidden;
+  transform: translate(var(--x, 0), var(--y, 0)) scale(var(--g, 1));
+  transition: transform .35s cubic-bezier(.3,1.6,.5,1), background .3s, color .3s;
+  touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
 }
-.yes { left: 28%; transform: translate(-50%, -50%) scale(var(--s, 1)); background: var(--pink-strong); color: #fff; box-shadow: 0 6px 18px #ee8fab66; z-index: 2; }
-.no { left: 72%; transform: translate(-50%, -50%) scale(var(--ns, 1)); background: var(--paper); color: var(--ink-soft); border: 1.5px solid var(--line); z-index: 3; }
+.no span { position: relative; z-index: 1; }
+.no[data-stage="3"], .no[data-stage="4"] { background: #fff0f4; }
+.no[data-stage="5"], .no[data-stage="6"], .no[data-stage="7"] { background: #ffe0e9; color: var(--rose); }
+.no.hit { animation: hit .35s; }
+@keyframes hit { 25% { translate: -6px 0; rotate: -3deg; } 50% { translate: 6px 0; rotate: 3deg; } 75% { translate: -3px 0; } }
+.no.dying { animation: tremble .08s linear infinite; }
+@keyframes tremble { 0% { translate: -2px 1px; } 50% { translate: 2px -1px; } 100% { translate: -1px 2px; } }
+.cracks { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+.cracks path { fill: none; stroke: var(--rose); stroke-width: 1.4; vector-effect: non-scaling-stroke; stroke-linejoin: round;
+  stroke-dasharray: 200; stroke-dashoffset: 200; transition: stroke-dashoffset .35s ease; }
+.cracks path.on { stroke-dashoffset: 0; }
+.shard { position: fixed; z-index: 25; pointer-events: none; background: #ffe0e9; border: 1px solid var(--pink); }
+.yes {
+  padding: 22px 64px; border-radius: 999px; border: 0; font-size: 30px; font-weight: 500;
+  background: var(--pink-strong); color: #fff; box-shadow: 0 10px 30px #ee8fab88; touch-action: manipulation;
+}
+.yes[hidden] { display: none; }
+.yes.born { animation: born .9s cubic-bezier(.2,1.6,.4,1) both, glow 1.6s ease-in-out .9s infinite; }
+@keyframes born { 0% { transform: scale(0) rotate(-20deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes glow { 50% { box-shadow: 0 10px 44px #ee8fabcc; transform: scale(1.05); } }
 .q-msg { font: 500 24px var(--hand); color: var(--rose); min-height: 34px; margin: 8px 0 0; }
 .meme {
   position: fixed; left: 50%; bottom: 90px; width: 170px; transform: translate(-50%, 30px) rotate(-4deg);
@@ -302,8 +323,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .poem .sub { font-size: 20px; }
   .poem .sign { font-size: 34px; }
   .q-text { font-size: 24px; }
-  .q-zone { height: 220px; }
-  .yes, .no { font-size: 24px; padding: 18px 40px; }
+  .q-zone { height: 280px; }
+  .no { font-size: 24px; padding: 18px 46px; }
+  .yes { font-size: 36px; padding: 26px 80px; }
   .q-msg { font-size: 32px; }
   .meme { width: 240px; }
   .nav button { width: 58px; height: 58px; font-size: 32px; }

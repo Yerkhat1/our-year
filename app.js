@@ -198,7 +198,12 @@
     if (s.kind === "question") {
       return `<div class="inner question">${scene("heart", "ещё один год?")}<h2>И последнее</h2>
         <p class="q-text">Ты останешься со мной ещё на один год?<br>И на все, которые будут после?</p>
-        <div class="q-zone"><button class="yes">Да</button><button class="no">Нет</button></div>
+        <div class="q-zone"><button class="no" data-stage="0"><span>Нет</span>
+          <svg class="cracks" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M50 0 L46 9 L53 15 L48 22"/><path d="M48 22 L40 27 L43 34 L37 40"/><path d="M53 15 L64 12 L70 18 L82 15"/>
+            <path d="M48 22 L58 26 L62 34 L71 37"/><path d="M40 27 L28 24 L20 29 L8 26"/><path d="M64 12 L67 3 L75 0 M20 29 L16 37 M70 18 L76 27 L92 30"/>
+          </svg></button>
+          <button class="yes" hidden>Да ♥</button></div>
         <p class="q-msg" aria-live="polite"></p></div>`;
     }
     const media = s.photos && s.photos.length ? photosHTML(s.photos) : scene(s.bear);
@@ -232,6 +237,7 @@
     setupPoem();
     setupQuestion();
     go(0);
+    setTimeout(() => $("#swipeTip").classList.add("hidden"), 6000);
   }
 
   function go(i) {
@@ -250,7 +256,8 @@
   $("#prev").addEventListener("click", () => go(cur - 1));
   $("#next").addEventListener("click", () => go(cur + 1));
   document.addEventListener("keydown", (e) => {
-    if ($("#story").classList.contains("hidden") || !$("#finale").classList.contains("hidden")) return;
+    if (e.key === "Escape") $("#lightbox").classList.add("hidden");
+    if ($("#story").classList.contains("hidden") || !$("#finale").classList.contains("hidden") || !$("#lightbox").classList.contains("hidden")) return;
     if (e.key === "ArrowRight") go(cur + 1);
     if (e.key === "ArrowLeft") go(cur - 1);
   });
@@ -270,49 +277,75 @@
     poemSlide.querySelectorAll(".st").forEach((el) => io.observe(el));
   }
 
-  /* ---------- the "no" button that can't be pressed ---------- */
+  /* ---------- the only button is "no": it grows, cracks, breaks, and "yes" falls out ---------- */
   function setupQuestion() {
     const slide = slidesEl[D.slides.findIndex((s) => s.kind === "question")];
     if (!slide) return;
-    const yes = $(".yes", slide), no = $(".no", slide), msg = $(".q-msg", slide);
+    const zone = $(".q-zone", slide), yes = $(".yes", slide), no = $(".no", slide), msg = $(".q-msg", slide);
+    const cracks = [...no.querySelectorAll(".cracks path")];
     const meme = document.createElement("div");
     meme.className = "meme";
     meme.innerHTML = `<img alt="">`;
     document.body.appendChild(meme);
-    const lines = ["в смысле, нет?", "не-а", "кнопка против", "ну попробуй ещё", "она тебя боится", "я же жду...", "ладно, это бесполезно", "сдавайся ♥"];
-    // places the "no" button can jump to, all clear of the "yes" button
-    const SPOTS = [[80, 14], [80, 86], [64, 22], [88, 50], [62, 80], [14, 6], [42, 6], [14, 94], [42, 94], [72, 50]];
-    let tries = 0, memeTimer, spot = -1;
+    const LAST = 7;
+    const lines = ["", "в смысле, нет?", "оно не нажимается", "кнопке это не нравится", "она злится и растёт", "ты её доводишь", "она сейчас лопнет...", ""];
+    let stage = 0, last = 0, memeTimer, broken = false;
     function showMeme(k) {
       meme.querySelector("img").src = D.images[k];
       meme.classList.add("show");
       clearTimeout(memeTimer);
-      memeTimer = setTimeout(() => meme.classList.remove("show"), 1700);
+      memeTimer = setTimeout(() => meme.classList.remove("show"), 1800);
     }
-    function run(e) {
-      if (tries >= 8) return;
-      e && e.preventDefault();
-      tries++;
-      let j;
-      do { j = Math.floor(Math.random() * SPOTS.length); } while (j === spot);
-      spot = j;
-      const [nx, ny] = SPOTS[j];
-      no.style.left = nx + "%";
-      no.style.top = ny + "%";
-      yes.style.setProperty("--s", Math.min(1 + tries * 0.13, 1.9));
-      no.style.setProperty("--ns", Math.max(1 - tries * 0.07, 0.6));
-      msg.textContent = lines[(tries - 1) % lines.length];
-      if (tries === 3) showMeme(D.memes.no);
-      if (tries === 6) showMeme(D.memes.angry);
-      if (tries >= 8) {
-        no.textContent = "Да";
-        no.style.setProperty("--ns", 1);
-        msg.textContent = "ну вот, теперь обе кнопки правильные";
-      }
+    function hit(e) {
+      if (e) e.preventDefault();
+      if (broken) return;
+      const now = Date.now();
+      if (now - last < 280) return; // one tap = one try, even though pointerdown and click both fire
+      last = now;
+      stage++;
+      navigator.vibrate?.(25 + stage * 10);
+      no.dataset.stage = stage;
+      no.style.setProperty("--g", 1 + stage * 0.2);
+      no.style.setProperty("--x", (Math.random() * 40 - 20).toFixed(0) + "px");
+      no.style.setProperty("--y", (Math.random() * 24 - 12).toFixed(0) + "px");
+      cracks.forEach((p, i) => p.classList.toggle("on", i < stage - 1));
+      no.classList.remove("hit"); void no.offsetWidth; no.classList.add("hit");
+      msg.textContent = lines[stage] || "";
+      if (stage === 2) showMeme(D.memes.no);
+      if (stage === 5) showMeme(D.memes.angry);
+      if (stage >= LAST) shatter();
     }
-    no.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") run(e); });
-    no.addEventListener("pointerdown", run);
-    no.addEventListener("click", (e) => { if (tries >= 8) finale(); else run(e); });
+    function shatter() {
+      broken = true;
+      no.classList.add("dying");
+      setTimeout(() => {
+        const r = no.getBoundingClientRect();
+        for (let i = 0; i < 16; i++) {
+          const sh = document.createElement("span");
+          sh.className = "shard";
+          const w = r.width / 4, h = r.height / 2;
+          sh.style.cssText = `left:${r.left + (i % 4) * w}px;top:${r.top + Math.floor(i / 8) * h}px;width:${w}px;height:${h}px;`;
+          const pts = Array.from({ length: 3 }, () => `${(Math.random() * 100).toFixed(0)}% ${(Math.random() * 100).toFixed(0)}%`);
+          sh.style.clipPath = `polygon(0 0, 100% 0, ${pts.join(",")}, 0 100%)`;
+          document.body.appendChild(sh);
+          const ang = Math.random() * Math.PI * 2, dist = 120 + Math.random() * 200;
+          sh.animate([
+            { transform: "translate(0,0) rotate(0)", opacity: 1 },
+            { transform: `translate(${Math.cos(ang) * dist}px, ${Math.sin(ang) * dist + 160}px) rotate(${Math.random() * 540 - 270}deg)`, opacity: 0 },
+          ], { duration: 1100 + Math.random() * 400, easing: "cubic-bezier(.2,.7,.4,1)", fill: "forwards" }).onfinish = () => sh.remove();
+        }
+        no.hidden = true;
+        yes.hidden = false;
+        yes.classList.add("born");
+        msg.textContent = "ой. а под ней было вот это";
+        const z = zone.getBoundingClientRect();
+        pop(z.left + z.width / 2, z.top + z.height / 2, 10);
+        navigator.vibrate?.([40, 30, 80]);
+      }, 450);
+    }
+    no.addEventListener("pointerdown", hit);
+    no.addEventListener("click", hit);
+    no.addEventListener("contextmenu", (e) => e.preventDefault());
     yes.addEventListener("click", finale);
   }
 
