@@ -71,7 +71,7 @@
       ${bear({ x: 92, y: 112, c: "brown", f: "dot", wave: true })}
       ${bear({ x: 210, y: 112, c: "white", f: "happy", cls: "wob" })}
       ${txt(150, 30, "x² + 2x + 1", 24, -4)}${txt(40, 24, "SAT", 20, -10, "#ee8fab")}${txt(262, 28, "IELTS", 20, 8, "#ee8fab")}
-      ${txt(150, 70, "= (x+1)²", 20, 3, "#8a6670")}`,
+      ${txt(150, 58, "= (x+1)²", 19, 3, "#8a6670")}`,
     apart: () => `${ground}
       ${bear({ x: 70, y: 112, c: "white", f: "blush", r: -5 })}
       ${bear({ x: 230, y: 112, c: "brown", f: "blush", r: 5 })}
@@ -102,6 +102,7 @@
     const z = w >= 820 ? Math.max(1, Math.min(w / 600, h / 540, 1.75)) : 1;
     document.documentElement.style.setProperty("--z", z.toFixed(3));
     document.documentElement.style.setProperty("--zn", Math.max(1, z * 0.85).toFixed(3));
+    document.documentElement.style.setProperty("--zq", Math.max(0.82, Math.min(z, h / 760)).toFixed(3));
   }
   fit();
   addEventListener("resize", fit);
@@ -191,7 +192,7 @@
   const peek = () => `<svg class="peek-bear" viewBox="-60 -56 120 84" aria-hidden="true">${bear({ x: 0, y: 0, c: peekN++ % 2 ? "white" : "brown", f: peekN % 3 ? "blush" : "happy" })}</svg>`;
   function photosHTML(list) {
     const items = list.map((p, i) => `<figure class="pol" style="--r:${ROT[i % ROT.length]}deg" data-k="${esc(p.k)}" data-c="${esc(p.c || "")}">
-      <img src="${D.images[p.k]}" alt="${esc(p.c || "")}" loading="lazy"><figcaption>${esc(p.c || "")}</figcaption>${i === 0 ? peek(list.length) : ""}</figure>`).join("");
+      <img src="${D.images[p.k]}" alt="${esc(p.c || "")}" decoding="async"><figcaption>${esc(p.c || "")}</figcaption>${i === 0 ? peek(list.length) : ""}</figure>`).join("");
     return `<div class="photos n${list.length}">${items}</div>`;
   }
   const verse = (t) => esc(t).replace(/~([^~]+)~/g, "<s>$1</s>");
@@ -224,9 +225,19 @@
     return `<div class="inner"><div class="eyebrow">${esc(s.eyebrow)}</div><h2>${esc(s.title)}</h2>${media}${prose(s.text)}${versesHTML(s.verse)}${s.note ? `<p class="note">${esc(s.note)}</p>` : ""}</div>`;
   }
 
+  function toBlobUrls(images) {
+    for (const k in images) {
+      const [head, b64] = images[k].split(",");
+      const bin = atob(b64), u = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      images[k] = URL.createObjectURL(new Blob([u], { type: head.slice(5).split(";")[0] }));
+    }
+  }
+
   function start(data) {
     if (D) return;
     D = data;
+    toBlobUrls(D.images);
     $("#lock").classList.add("hidden");
     $("#envelope").classList.remove("hidden");
     const r = $("#envBtn").getBoundingClientRect();
@@ -275,6 +286,14 @@
     if (e.key === "ArrowRight") go(cur + 1);
     if (e.key === "ArrowLeft") go(cur - 1);
   });
+  let wheelLock = 0;
+  $("#track").addEventListener("wheel", (e) => {
+    if (Math.abs(e.deltaX) < 30 || Math.abs(e.deltaX) < Math.abs(e.deltaY) * 1.5) return;
+    const now = Date.now();
+    if (now < wheelLock) return;
+    wheelLock = now + 700;
+    go(cur + (e.deltaX > 0 ? 1 : -1));
+  }, { passive: true });
   let sx = 0, sy = 0, tracking = false;
   $("#track").addEventListener("touchstart", (e) => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; tracking = true; }, { passive: true });
   $("#track").addEventListener("touchend", (e) => {
